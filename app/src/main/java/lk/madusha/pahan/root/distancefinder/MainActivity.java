@@ -1,12 +1,22 @@
 package lk.madusha.pahan.root.distancefinder;
 
 import android.app.DownloadManager;
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,19 +25,23 @@ import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static JSONObject results;
-    private final String requestPattern = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial";
-    private final String KEY = "AIzaSyAyOE0-MuGvLhmtsiStp72Hkvvp66FP49g";
+    private static JSONObject results = null;
+    private static final String requestPattern = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial";
+    private static final String KEY = "AIzaSyAyOE0-MuGvLhmtsiStp72Hkvvp66FP49g";
+    static Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        context = getApplicationContext();
 
         //get input from text boxes
         EditText loc1 = (EditText) findViewById(R.id.location1);
         EditText loc2 = (EditText) findViewById(R.id.location2);
+        final TextView display = (TextView) findViewById(R.id.display);
+
         final String location1 = loc1.getText().toString();
         final String location2 = loc2.getText().toString();
 
@@ -36,50 +50,60 @@ public class MainActivity extends AppCompatActivity {
         find.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                results = getResults(location1, location2);
+                getResults(location1, location2);
+                if(results != null)
+                    display.setText(results.toString());
+                else
+                    System.out.println("results is null");
             }
         });
     }
 
     //get a json object with results
-    public static JSONObject getResults(String loc1, String loc2)
+    public static void getResults(String loc1, String loc2)
     {
-        JSONObject response = null;
-        String result = sendGetRequest(requestPattern + "&origins=" + loc1 + "&destinations=" + loc2 + "&key=" + KEY);
-        try {
-            response = new JSONObject(result);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return response;
+        sendGetRequest(requestPattern + "&origins=" + loc1 + "&destinations=" + loc2 + "&key=" + KEY);
     }
 
     //sent a get request and return result string
-    public static String sendGetRequest(String URL)
+    public static void sendGetRequest(String URL)
     {
         InputStream in = null;
-        String result = "";
+        final String result;
 
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://www.google.com";
+        RequestQueue queue = MyVolley.getRequestQueue();
+        if(queue == null)
+            queue = MyVolley.newRequestQueue(context);
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(DownloadManager.Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        mTextView.setText("Response is: "+ response.substring(0,500));
-                    }
-                }, new Response.ErrorListener() {
+        JsonObjectRequest myReq = new JsonObjectRequest(Request.Method.GET,URL, null,
+                reqSuccessListener(),
+                reqErrorListener());
+        System.out.println("Just after sending request");
+
+        queue.add(myReq);
+
+    }
+
+    private static Response.Listener<JSONObject> reqSuccessListener() {
+        return new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response)
+            {
+               results = response;
+               System.out.println("inside on response");
+            }
+        };
+    }
+
+
+    private static Response.ErrorListener reqErrorListener() {
+        return new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mTextView.setText("That didn't work!");
+                System.out.println("err resp");
+                results = null;
             }
-        });
-// Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        };
     }
 
 }

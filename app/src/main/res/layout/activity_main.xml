@@ -17,7 +17,7 @@
         android:layout_marginLeft="0dp"
         android:layout_marginTop="2dp"
         android:ems="2"
-        android:inputType="number" >
+        android:inputType="text" >
 
         <requestFocus />
     </EditText>
@@ -39,5 +39,13 @@
         android:layout_marginLeft="0dp"
         android:layout_marginTop="110dp"
         android:text="Find" />
+
+    <TextView
+        android:id="@+id/display"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="150dp"
+        android:text="" />
 
 </RelativeLayout>
