@@ -34,8 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private static JSONObject results = null;
     private static final String requestPattern = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric";
     private static final String KEY = "AIzaSyAyOE0-MuGvLhmtsiStp72Hkvvp66FP49g";
-    static Context context;
-    static TextView display;
+    private static Context context;
+    private static TextView display;
+    public static Location myLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = getApplicationContext();
+        final LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        final LocationListener listener = new MyCurrentLocation(locationManager, context);
 
         //get input from text boxes
         final EditText loc1 = (EditText) findViewById(R.id.location1);
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         myLocation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loc1.setText(findMyLocation());
+                loc1.setText(findMyLocation(locationManager, listener));
             }
         });
     }
@@ -162,36 +165,25 @@ public class MainActivity extends AppCompatActivity {
         return "Something wrong with your input locations";
     }
 
-    public static String findMyLocation()
-    {
-        final Location myLocation = new Location(LocationManager.NETWORK_PROVIDER);
+    public String findMyLocation(LocationManager locationManager, LocationListener listener) {
 
-        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        LocationListener locationListener = new LocationListener() {
-            public void onLocationChanged(Location location)
-            {
-                myLocation.set(location);
-            }
+        if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+            System.out.println("Provider enabled ********************");
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-            }
-
-            public void onProviderEnabled(String provider) {
-            }
-
-            public void onProviderDisabled(String provider) {
-            }
-        };
-
-        try {
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-        }
-        catch (SecurityException e)
-        {
-            System.out.println("Permission denied");
         }
 
-        return myLocation.getLatitude()+myLocation.getLongitude()+"";
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, listener);
+
+
+        if(myLocation != null)
+            return myLocation.getLatitude()+"   "+myLocation.getLongitude()+"";
+
+        myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if(myLocation== null)
+            return "null";
+        return "good";
         //return "Maharagama";
     }
 
